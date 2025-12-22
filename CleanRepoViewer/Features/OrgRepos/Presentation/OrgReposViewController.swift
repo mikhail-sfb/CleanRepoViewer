@@ -35,7 +35,7 @@ final class OrgReposViewController: UIViewController {
             right: 0
         )
         table.showsVerticalScrollIndicator = false
-        table.contentInsetAdjustmentBehavior = .automatic
+        table.contentInsetAdjustmentBehavior = .never
         return table
     }()
 
@@ -91,13 +91,7 @@ final class OrgReposViewController: UIViewController {
     }
 
     @objc private func triggerError() {
-        let errorState = ViewState.error(
-            "Test Error: Unable to load repositories. Please check your connection and try again."
-        )
-        viewModel.delegate?.didChangeState(
-            errorState,
-            previousState: viewModel.state
-        )
+        viewModel.simulateError()
     }
 
     private func setupView() {
@@ -137,7 +131,7 @@ final class OrgReposViewController: UIViewController {
 
     private func setupConstraints() {
         tableView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+            make.edges.equalTo(view.safeAreaLayoutGuide)
         }
 
         loadingIndicator.snp.makeConstraints { make in
@@ -158,24 +152,20 @@ extension OrgReposViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int)
         -> Int
     {
-        switch viewModel.state {
-        case .initial, .loading, .empty, .error:
-            return 0
-        case .refreshing(let repos), .loaded(let repos):
-            return repos.count
-        case .loadingMore(let repos):
-            return repos.count + 1
-        }
+        return viewModel.displayItems.count
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath)
         -> UITableViewCell
     {
-        switch viewModel.state {
-        case .initial, .loading, .empty, .error:
+        guard indexPath.row < viewModel.displayItems.count else {
             return UITableViewCell()
+        }
+        
+        let item = viewModel.displayItems[indexPath.row]
 
-        case .refreshing(let repos), .loaded(let repos):
+        switch item {
+        case .repository(let repository):
             guard
                 let cell = tableView.dequeueReusableCell(
                     withIdentifier: RepositoryCell.reuseIdentifier,
@@ -185,35 +175,19 @@ extension OrgReposViewController: UITableViewDataSource {
                 return UITableViewCell()
             }
 
-            let repository = repos[indexPath.row]
-            cell.configure(with: repository, animated: false)
+            cell.configure(with: repository)
             return cell
 
-        case .loadingMore(let repos):
-            if indexPath.row < repos.count {
-                guard
-                    let cell = tableView.dequeueReusableCell(
-                        withIdentifier: RepositoryCell.reuseIdentifier,
-                        for: indexPath
-                    ) as? RepositoryCell
-                else {
-                    return UITableViewCell()
-                }
-
-                let repository = repos[indexPath.row]
-                cell.configure(with: repository, animated: false)
-                return cell
-            } else {
-                guard
-                    let cell = tableView.dequeueReusableCell(
-                        withIdentifier: LoadingFooterCell.reuseIdentifier,
-                        for: indexPath
-                    ) as? LoadingFooterCell
-                else {
-                    return UITableViewCell()
-                }
-                return cell
+        case .loading:
+            guard
+                let cell = tableView.dequeueReusableCell(
+                    withIdentifier: LoadingFooterCell.reuseIdentifier,
+                    for: indexPath
+                ) as? LoadingFooterCell
+            else {
+                return UITableViewCell()
             }
+            return cell
         }
     }
 }
@@ -224,6 +198,11 @@ extension OrgReposViewController: UITableViewDelegate {
         willDisplay cell: UITableViewCell,
         forRowAt indexPath: IndexPath
     ) {
+        guard indexPath.row < viewModel.displayItems.count else { return }
+        guard case .repository = viewModel.displayItems[indexPath.row] else {
+            return
+        }
+
         if viewModel.shouldLoadMore(at: indexPath.row) {
             viewModel.loadNextPage()
         }
@@ -241,11 +220,11 @@ extension OrgReposViewController: OrgReposViewModelDelegate {
         case (.loaded, .refreshing), (.error, .loading):
             clearBackgroundView()
 
-        case (.loading, .loaded(_)):
+        case (.loading, .loaded(let repos)):
             clearBackgroundView()
             hideLoadingIndicator()
             refreshControl.endRefreshing()
-            tableView.reloadData()
+            animateInitialLoad(repos: repos)
 
         case (.refreshing, .loaded):
             clearBackgroundView()
@@ -261,6 +240,7 @@ extension OrgReposViewController: OrgReposViewModelDelegate {
         case (_, .error(let message)):
             clearBackgroundView()
             refreshControl.endRefreshing()
+            tableView.reloadData()
             showError(message: message)
 
         case (_, .empty):
@@ -289,7 +269,13 @@ extension OrgReposViewController: OrgReposViewModelDelegate {
     }
 
     private func animateInitialLoad(repos: [Repository]) {
-        tableView.reloadData()
+        let indexPaths = (0..<repos.count).map {
+            IndexPath(row: $0, section: 0)
+        }
+
+        tableView.performBatchUpdates {
+            tableView.insertRows(at: indexPaths, with: .fade)
+        }
     }
 
     private func animateLoadMore(oldCount: Int, newCount: Int) {
@@ -299,15 +285,6 @@ extension OrgReposViewController: OrgReposViewModelDelegate {
 
         tableView.performBatchUpdates {
             tableView.insertRows(at: newIndexPaths, with: .fade)
-        } completion: { _ in
-            for indexPath in newIndexPaths.prefix(3) {
-                if let cell = self.tableView.cellForRow(at: indexPath)
-                    as? RepositoryCell,
-                    let repo = self.viewModel.repository(at: indexPath.row)
-                {
-                    cell.configure(with: repo, animated: true)
-                }
-            }
         }
     }
 

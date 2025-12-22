@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Repository {
+struct Repository: Hashable {
     let id: Int
     let name: String
     let description: String?

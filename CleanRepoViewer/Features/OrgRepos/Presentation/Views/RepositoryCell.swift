@@ -60,8 +60,6 @@ final class RepositoryCell: UITableViewCell {
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        containerView.alpha = 1
-        containerView.transform = .identity
     }
 
     private func setupView() {
@@ -119,33 +117,10 @@ final class RepositoryCell: UITableViewCell {
         }
     }
 
-    func configure(with repository: Repository, animated: Bool = false) {
+    func configure(with repository: Repository) {
         nameLabel.text = repository.name
         descriptionLabel.text =
             repository.description ?? "No description available"
-
-        if animated {
-            animateAppearance()
-        } else {
-            containerView.alpha = 1
-            containerView.transform = .identity
-        }
-    }
-
-    private func animateAppearance() {
-        containerView.alpha = 0
-        containerView.transform = CGAffineTransform(translationX: 0, y: 20)
-
-        UIView.animate(
-            withDuration: 0.5,
-            delay: 0,
-            usingSpringWithDamping: 0.8,
-            initialSpringVelocity: 0.5,
-            options: .curveEaseOut
-        ) {
-            self.containerView.alpha = 1
-            self.containerView.transform = .identity
-        }
     }
 
     override func setHighlighted(_ highlighted: Bool, animated: Bool) {

@@ -218,11 +218,14 @@ final class OrgReposViewModelTests: XCTestCase {
         sut.loadInitialRepositories()
         await fulfillment(of: [exp], timeout: 1.0)
 
-        let repo = sut.repository(at: 0)
-
-        XCTAssertEqual(repo?.id, 42)
-        XCTAssertEqual(repo?.name, "TestRepo")
-        XCTAssertEqual(repo?.description, "TestDesc")
+        guard case .loaded(let repos) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        
+        XCTAssertEqual(repos.first?.id, 42)
+        XCTAssertEqual(repos.first?.name, "TestRepo")
+        XCTAssertEqual(repos.first?.description, "TestDesc")
     }
 
     func test_shouldLoadMore_returnsTrueWhenNearEnd() async throws {

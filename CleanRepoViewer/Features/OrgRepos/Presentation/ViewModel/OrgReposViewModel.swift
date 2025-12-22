@@ -17,7 +17,7 @@ final class OrgReposViewModel {
     weak var delegate: OrgReposViewModelDelegate?
 
     private let fetchRepositoriesUseCase: FetchRepositoriesUseCase
-    private let perPage = 30
+    private let perPage: Int
 
     private(set) var state: ViewState = .initial {
         didSet {
@@ -29,19 +29,20 @@ final class OrgReposViewModel {
 
     private var currentPage = 0
     private var hasMorePages = true
+    private var fetchTask: Task<Void, Never>?
 
-    init(fetchRepositoriesUseCase: FetchRepositoriesUseCase) {
+    init(fetchRepositoriesUseCase: FetchRepositoriesUseCase, pageSize: Int = 30)
+    {
         self.fetchRepositoriesUseCase = fetchRepositoriesUseCase
+        self.perPage = pageSize
+    }
+
+    deinit {
+        fetchTask?.cancel()
     }
 
     var numberOfRepositories: Int {
         return state.repositories.count
-    }
-
-    func repository(at index: Int) -> Repository? {
-        let repos = state.repositories
-        guard index >= 0 && index < repos.count else { return nil }
-        return repos[index]
     }
 
     func loadInitialRepositories() {
@@ -67,8 +68,6 @@ final class OrgReposViewModel {
         fetchPage(isInitial: false)
     }
 
-    /// Clears current list and shows the empty state.
-    /// Useful for debugging UI states (e.g. after an error) and to force a pull-to-refresh.
     func clearRepositories() {
         currentPage = 0
         hasMorePages = true
@@ -76,14 +75,18 @@ final class OrgReposViewModel {
     }
 
     private func fetchPage(isInitial: Bool) {
+        fetchTask?.cancel()
+
         let nextPage = currentPage + 1
         let input = FetchRepositoriesInput(page: nextPage, perPage: perPage)
 
-        Task { @MainActor in
+        fetchTask = Task { @MainActor in
             do {
                 let page = try await fetchRepositoriesUseCase.execute(
                     input: input
                 )
+
+                guard !Task.isCancelled else { return }
 
                 self.currentPage = page.currentPage
                 self.hasMorePages = page.hasNextPage
@@ -97,12 +100,25 @@ final class OrgReposViewModel {
                     self.state = .loaded(allRepositories)
                 }
             } catch {
-                if let networkError = error as? NetworkError {
-                    self.state = .error(networkError.localizedDescription)
-                } else {
-                    self.state = .error(error.localizedDescription)
-                }
+                guard !Task.isCancelled else { return }
+                self.state = .error(error.localizedDescription)
             }
+        }
+    }
+
+    enum DisplayItem: Hashable {
+        case repository(Repository)
+        case loading
+    }
+
+    var displayItems: [DisplayItem] {
+        switch state {
+        case .initial, .loading, .empty, .error:
+            return []
+        case .refreshing(let repos), .loaded(let repos):
+            return repos.map { .repository($0) }
+        case .loadingMore(let repos):
+            return repos.map { .repository($0) } + [.loading]
         }
     }
 
@@ -110,4 +126,17 @@ final class OrgReposViewModel {
         let repos = state.repositories
         return index >= repos.count - 5 && hasMorePages && !state.isLoading
     }
+
+    #if DEBUG
+        func simulateError() {
+            let debugError = NetworkError.serverError(
+                statusCode: 500
+            )
+            handleError(debugError)
+        }
+
+        private func handleError(_ error: NetworkError) {
+            state = .error(error.localizedDescription)
+        }
+    #endif
 }

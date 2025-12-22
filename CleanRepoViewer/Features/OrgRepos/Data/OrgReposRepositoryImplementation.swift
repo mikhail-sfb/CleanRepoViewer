@@ -19,7 +19,7 @@ final class OrgReposRepositoryImplementation: OrgReposRepository {
         let dtos = try await dataSource.fetchRepositories(page: page, perPage: perPage)
         let repositories = dtos.map { $0.toDomain() }
         
-        let hasNextPage = repositories.count >= perPage
+        let hasNextPage = repositories.count == perPage
         
         return RepositoriesPage(
             repositories: repositories,

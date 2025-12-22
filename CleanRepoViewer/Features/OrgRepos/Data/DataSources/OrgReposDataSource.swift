@@ -23,6 +23,6 @@ final class OrgReposDataSource: BaseDataSource {
             perPage: perPage
         )
 
-        return try await networkService.request(endpoint)
+        return try await performRequest(endpoint)
     }
 }
