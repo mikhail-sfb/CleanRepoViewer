@@ -14,20 +14,19 @@ class ViewController: UIViewController {
         view.backgroundColor = .systemBackground
         setupUI()
     }
-    
+
     private func setupUI() {
         let label = UILabel()
         label.text = "Clean Repo Viewer"
         label.font = .systemFont(ofSize: 24, weight: .bold)
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
-        
+
         view.addSubview(label)
-        
+
         NSLayoutConstraint.activate([
             label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor),
         ])
     }
 }
-
