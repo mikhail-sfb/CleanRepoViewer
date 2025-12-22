@@ -11,6 +11,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
+    // For the 1 featured app Swinject or Needle are overkill
     func scene(
         _ scene: UIScene,
         willConnectTo session: UISceneSession,
@@ -19,8 +20,20 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
         let window = UIWindow(windowScene: windowScene)
-        let viewController = ViewController()
-        window.rootViewController = viewController
+
+        let dataSource = OrgReposDataSource()
+        let repository = OrgReposRepositoryImplementation(
+            dataSource: dataSource
+        )
+        let useCase = FetchRepositoriesUseCase(repository: repository)
+        let viewModel = OrgReposViewModel(fetchRepositoriesUseCase: useCase)
+        let viewController = OrgReposViewController(viewModel: viewModel)
+
+        let navigationController = UINavigationController(
+            rootViewController: viewController
+        )
+
+        window.rootViewController = navigationController
         window.makeKeyAndVisible()
         self.window = window
     }

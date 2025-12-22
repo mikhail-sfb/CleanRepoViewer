@@ -18,7 +18,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return true
     }
 
-    // For the 1 featured app Swinject or Needle are overkill
     func application(
         _ application: UIApplication,
         configurationForConnecting connectingSceneSession: UISceneSession,

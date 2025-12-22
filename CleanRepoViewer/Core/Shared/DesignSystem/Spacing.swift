@@ -75,9 +75,17 @@ public enum Spacing {
     }
 
     public enum IconSize {
+        /// 16pt
         public static var s: CGFloat { unit * 4 }
+        /// 24pt
         public static var m: CGFloat { unit * 6 }
+        /// 32pt
         public static var l: CGFloat { unit * 8 }
+        /// 48pt
         public static var xl: CGFloat { unit * 12 }
+    }
+
+    public enum Layout {
+        public static var estimatedRowHeight: CGFloat { unit * 30 } 
     }
 }
