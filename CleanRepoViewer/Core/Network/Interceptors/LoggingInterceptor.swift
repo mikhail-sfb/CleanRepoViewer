@@ -42,14 +42,40 @@ import Foundation
                 "Response: \(urlRequest.httpMethod ?? "") \(urlRequest.url?.absoluteString ?? "") [\(statusCode)]"
             )
 
-            if let data = response.data,
-                let jsonString = String(data: data, encoding: .utf8)
-            {
-                print("Response Data: \(jsonString)")
+            if let data = response.data {
+                logResponseData(data)
             }
 
             if let error = response.error {
                 print("Error: \(error.localizedDescription)")
+            }
+        }
+
+        private func logResponseData(_ data: Data) {
+            guard
+                let jsonObject = try? JSONSerialization.jsonObject(with: data),
+                let jsonArray = jsonObject as? [[String: Any]]
+            else {
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    print("Response Data: \(jsonString)")
+                }
+                return
+            }
+
+            let itemCount = jsonArray.count
+            let itemsToShow = min(3, itemCount)
+            let limitedArray = Array(jsonArray.prefix(itemsToShow))
+
+            if let limitedData = try? JSONSerialization.data(
+                withJSONObject: limitedArray,
+                options: .prettyPrinted
+            ),
+                let prettyString = String(data: limitedData, encoding: .utf8)
+            {
+                print(
+                    "Response Data: [\(itemCount) items, showing first \(itemsToShow)]"
+                )
+                print(prettyString)
             }
         }
     }
