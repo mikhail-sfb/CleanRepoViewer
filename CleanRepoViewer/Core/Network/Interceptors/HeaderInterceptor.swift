@@ -30,6 +30,13 @@ final class HeaderInterceptor: RequestInterceptor {
             forHTTPHeaderField: HTTPHeader.requestId
         )
 
+        if let token = Configuration.githubToken {
+            request.setValue(
+                "Bearer \(token)",
+                forHTTPHeaderField: HTTPHeader.authorization
+            )
+        }
+
         completion(.success(request))
     }
 }
