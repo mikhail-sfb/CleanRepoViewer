@@ -7,6 +7,7 @@
 
 import Foundation
 
+// Just generalised the way of how we create UseCases
 protocol UseCase {
     associatedtype Input
     associatedtype Output
