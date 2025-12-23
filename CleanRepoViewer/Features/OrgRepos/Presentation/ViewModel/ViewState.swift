@@ -16,23 +16,6 @@ enum ViewState: Equatable {
     case empty
     case error(String)
 
-    static func == (lhs: ViewState, rhs: ViewState) -> Bool {
-        switch (lhs, rhs) {
-        case (.initial, .initial),
-            (.loading, .loading),
-            (.empty, .empty):
-            return true
-        case (.refreshing(let lhsRepos), .refreshing(let rhsRepos)),
-            (.loaded(let lhsRepos), .loaded(let rhsRepos)),
-            (.loadingMore(let lhsRepos), .loadingMore(let rhsRepos)):
-            return lhsRepos.map(\.id) == rhsRepos.map(\.id)
-        case (.error(let lhsMsg), .error(let rhsMsg)):
-            return lhsMsg == rhsMsg
-        default:
-            return false
-        }
-    }
-
     var repositories: [Repository] {
         switch self {
         case .refreshing(let repos), .loaded(let repos),

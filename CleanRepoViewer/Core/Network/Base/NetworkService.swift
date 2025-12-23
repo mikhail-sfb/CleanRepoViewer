@@ -22,7 +22,8 @@ final class NetworkService: NetworkServicing {
 
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = NetworkConfiguration.timeout
-
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        
         var eventMonitors: [EventMonitor] = []
         #if DEBUG
             eventMonitors.append(LoggingInterceptor())

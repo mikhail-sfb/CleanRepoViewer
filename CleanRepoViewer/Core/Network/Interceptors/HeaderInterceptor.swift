@@ -25,10 +25,6 @@ final class HeaderInterceptor: RequestInterceptor {
             NetworkConfiguration.githubApiVersion,
             forHTTPHeaderField: HTTPHeader.githubApiVersion
         )
-        request.setValue(
-            UUID().uuidString,
-            forHTTPHeaderField: HTTPHeader.requestId
-        )
 
         if let token = Configuration.githubToken {
             request.setValue(

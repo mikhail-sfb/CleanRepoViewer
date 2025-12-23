@@ -213,11 +213,12 @@ extension OrgReposViewController: OrgReposViewModelDelegate {
     func didChangeState(_ state: ViewState, previousState: ViewState) {
 
         switch (previousState, state) {
-        case (.initial, .loading):
+        case (_, .loading):
             clearBackgroundView()
             showLoadingIndicator()
+            tableView.reloadData()
 
-        case (.loaded, .refreshing), (.error, .loading):
+        case (.loaded, .refreshing):
             clearBackgroundView()
 
         case (.loading, .loaded(let repos)):
@@ -239,6 +240,7 @@ extension OrgReposViewController: OrgReposViewModelDelegate {
 
         case (_, .error(let message)):
             clearBackgroundView()
+            hideLoadingIndicator()
             refreshControl.endRefreshing()
             tableView.reloadData()
             showError(message: message)

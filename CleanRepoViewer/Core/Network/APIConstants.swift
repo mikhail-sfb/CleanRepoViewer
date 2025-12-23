@@ -7,32 +7,25 @@
 
 import Foundation
 
-enum APIEndpoint {
-    case squareRepositories(page: Int, perPage: Int)
-
-    var path: String {
-        switch self {
-        case .squareRepositories:
-            return "/orgs/square/repos"
-        }
-    }
-
-    var url: URL? {
-        var components = URLComponents(string: APIConstants.baseURL)
-        components?.path = path
-
-        switch self {
-        case .squareRepositories(let page, let perPage):
-            components?.queryItems = [
-                URLQueryItem(name: "page", value: "\(page)"),
-                URLQueryItem(name: "per_page", value: "\(perPage)"),
-            ]
-        }
-
-        return components?.url
-    }
-}
-
 enum APIConstants {
     static let baseURL = "https://api.github.com"
+}
+
+enum HTTPHeader {
+    static let authorization = "Authorization"
+    static let accept = "Accept"
+    static let githubApiVersion = "X-GitHub-Api-Version"
+}
+
+enum HTTPHeaderValue {
+    static let githubJSON = "application/vnd.github+json"
+}
+
+enum HTTPStatusCode {
+    static let ok = 200
+    static let created = 201
+    static let unauthorized = 401
+    static let forbidden = 403
+    static let notFound = 404
+    static let tooManyRequests = 429
 }
