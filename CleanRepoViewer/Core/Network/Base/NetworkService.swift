@@ -23,7 +23,7 @@ final class NetworkService: NetworkServicing {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = NetworkConfiguration.timeout
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        
+
         var eventMonitors: [EventMonitor] = []
         #if DEBUG
             eventMonitors.append(LoggingInterceptor())
@@ -56,8 +56,16 @@ final class NetworkService: NetworkServicing {
     }
 
     private func mapAFError(_ error: Error) -> NetworkError {
+        if let urlError = error as? URLError {
+            return NetworkError.from(urlError: urlError)
+        }
+
         guard let afError = error as? AFError else {
             return .unknown(error.localizedDescription)
+        }
+
+        if let underlying = afError.underlyingError as? URLError {
+            return NetworkError.from(urlError: underlying)
         }
 
         if case .responseSerializationFailed(let reason) = afError {
@@ -72,7 +80,7 @@ final class NetworkService: NetworkServicing {
             }
         }
 
-        return .unknown(error.localizedDescription)
+        return .unknown(afError.localizedDescription)
     }
 
     private func mapStatusCode(_ statusCode: Int) -> NetworkError {

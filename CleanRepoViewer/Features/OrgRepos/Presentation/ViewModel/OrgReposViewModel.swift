@@ -101,7 +101,12 @@ final class OrgReposViewModel {
                 }
             } catch {
                 guard !Task.isCancelled else { return }
-                self.state = .error(error.localizedDescription)
+                let errorMessage = if let networkError = error as? NetworkError {
+                    networkError.userMessage
+                } else {
+                    "Something went wrong. Please try again"
+                }
+                self.state = .error(errorMessage)
             }
         }
     }
@@ -136,7 +141,7 @@ final class OrgReposViewModel {
         }
 
         private func handleError(_ error: NetworkError) {
-            state = .error(error.localizedDescription)
+            state = .error(error.userMessage)
         }
     #endif
 }
